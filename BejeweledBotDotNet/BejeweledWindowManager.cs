@@ -73,26 +73,14 @@ namespace DotNetBejewelledBot
                     {
                         if (((x <= 4) && (m_ColorMatrix[x, y] == m_ColorMatrix[x + 2, y]) &&
                             (m_ColorMatrix[x, y] == m_ColorMatrix[x + 3, y])) ||
-                            // [match][match]       [match]
-
-                            ((x <= 6) && (((y >= 1) && (m_ColorMatrix[x + 1, y - 1] == m_ColorMatrix[x, y]) &&
-                            (y <= 6) && (m_ColorMatrix[x + 1, y + 1] == m_ColorMatrix[x, y])) ||
-                            //       [match]
-                            //[match]
-                            //       [match]
-
-                            ((y <= 5) && (m_ColorMatrix[x + 1, y + 1] == m_ColorMatrix[x, y]) &&
+                            ((x <= 6) && (y >= 1) && (y <= 6) && (m_ColorMatrix[x + 1, y - 1] == m_ColorMatrix[x, y]) &&
+                            (m_ColorMatrix[x + 1, y + 1] == m_ColorMatrix[x, y])) ||
+                            ((y <= 5) && (x <= 6) && (m_ColorMatrix[x + 1, y + 1] == m_ColorMatrix[x, y]) &&
                             (m_ColorMatrix[x + 1, y + 2] == m_ColorMatrix[x, y])) ||
-                            //[match]
-                            //       [match]
-                            //       [match]
-
-                            ((y >= 2) && (m_ColorMatrix[x + 1, y - 1] == m_ColorMatrix[x, y]) &&
-                            (m_ColorMatrix[x + 1, y - 2] == m_ColorMatrix[x, y])))))
-                        //       [match]
-                        //       [match]
-                        //[match]   
+                            ((y >= 2) && (x <= 6) && (m_ColorMatrix[x + 1, y - 1] == m_ColorMatrix[x, y]) &&
+                            (m_ColorMatrix[x + 1, y - 2] == m_ColorMatrix[x, y])))
                         {
+                            // Move Gem Right
                             WinAPI.SetCursorPos(m_Window.Left + (x * 40) + 20, m_Window.Top + (y * 40) + 20);
                             WinAPI.DoMouseClick();
                             Thread.Sleep(5);
@@ -100,17 +88,15 @@ namespace DotNetBejewelledBot
                             WinAPI.DoMouseClick();
                         }
                         else if (((x >= 3) && (m_ColorMatrix[x, y] == m_ColorMatrix[x - 2, y]) &&
-                                 (m_ColorMatrix[x, y] == m_ColorMatrix[x - 3, y])) || //.. .
-
-                                 ((x >= 1) && (((y >= 1) && (m_ColorMatrix[x - 1, y - 1] == m_ColorMatrix[x, y]) &&
-                                 (y <= 6) && (m_ColorMatrix[x - 1, y + 1] == m_ColorMatrix[x, y])) || //:-
-
-                                 ((y <= 5) && (m_ColorMatrix[x - 1, y + 1] == m_ColorMatrix[x, y]) &&
+                                 (m_ColorMatrix[x, y] == m_ColorMatrix[x - 3, y])) ||
+                                 ((x >= 1) && (y >= 1) && (m_ColorMatrix[x - 1, y - 1] == m_ColorMatrix[x, y]) &&
+                                 (y <= 6) && (m_ColorMatrix[x - 1, y + 1] == m_ColorMatrix[x, y])) ||
+                                 ((x >= 1) && (y <= 5) && (m_ColorMatrix[x - 1, y + 1] == m_ColorMatrix[x, y]) &&
                                  (m_ColorMatrix[x - 1, y + 2] == m_ColorMatrix[x, y])) ||
-
-                                 ((y >= 2) && (m_ColorMatrix[x - 1, y - 1] == m_ColorMatrix[x, y]) &&
-                                  (m_ColorMatrix[x - 1, y - 2] == m_ColorMatrix[x, y])))))
+                                 ((x >= 1) && (y >= 2) && (m_ColorMatrix[x - 1, y - 1] == m_ColorMatrix[x, y]) &&
+                                  (m_ColorMatrix[x - 1, y - 2] == m_ColorMatrix[x, y])))
                         {
+                            // Move gem left
                             WinAPI.SetCursorPos(m_Window.Left + (x * 40) + 20, m_Window.Top + (y * 40) + 20);
                             WinAPI.DoMouseClick();
                             Thread.Sleep(5);
@@ -123,12 +109,13 @@ namespace DotNetBejewelledBot
                                  ((y >= 1) && (((x >= 1) && (m_ColorMatrix[x - 1, y - 1] == m_ColorMatrix[x, y]) &&
                                   (x <= 6) && (m_ColorMatrix[x + 1, y - 1] == m_ColorMatrix[x, y])) ||
 
-                                 ((x >= 2) && (m_ColorMatrix[x - 1, y - 1] == m_ColorMatrix[x, y]) &&
+                                 ((y >= 1) && (x >= 2) && (m_ColorMatrix[x - 1, y - 1] == m_ColorMatrix[x, y]) &&
                                   (m_ColorMatrix[x - 2, y - 1] == m_ColorMatrix[x, y])) ||
 
-                                 ((x <= 5) && (m_ColorMatrix[x + 1, y - 1] == m_ColorMatrix[x, y]) &&
+                                 ((y >= 1) && (x <= 5) && (m_ColorMatrix[x + 1, y - 1] == m_ColorMatrix[x, y]) &&
                                   (m_ColorMatrix[x + 2, y - 1] == m_ColorMatrix[x, y])))))
                         {
+                            // Move gem up
                             WinAPI.SetCursorPos(m_Window.Left + (x * 40) + 20, m_Window.Top + (y * 40) + 20);
                             WinAPI.DoMouseClick();
                             Thread.Sleep(5);
@@ -144,6 +131,7 @@ namespace DotNetBejewelledBot
                                  ((x >= 1) && (x <= 6) && (y <= 6) && (m_ColorMatrix[x, y] == m_ColorMatrix[x + 1, y + 1]) &&
                                    (m_ColorMatrix[x, y] == m_ColorMatrix[x - 1, y + 1])))
                         {
+                            // Move gem down
                             WinAPI.SetCursorPos(m_Window.Left + (x * 40) + 20, m_Window.Top + (y * 40) + 20);
                             WinAPI.DoMouseClick();
                             Thread.Sleep(5);
