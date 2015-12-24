@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 14
 VisualStudioVersion = 14.0.24720.0
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BejeweledBotDotNet", "BejeweledBotDotNet.csproj", "{A58E9F51-37FA-4366-8263-0AF001F8B6AF}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BejeweledBotDotNet", "BejeweledBotDotNet\BejeweledBotDotNet.csproj", "{A58E9F51-37FA-4366-8263-0AF001F8B6AF}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
