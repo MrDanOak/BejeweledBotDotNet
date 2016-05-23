@@ -1,11 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
 using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace DotNetBejewelledBot
@@ -18,7 +13,7 @@ namespace DotNetBejewelledBot
         public frmMain()
         {
             InitializeComponent();
-            m_BWM = new BejeweledWindowManager();
+
             BejeweledColor.Collection = new List<Color>();
             BejeweledColor.Collection.Add(BejeweledColor.Blue);
             BejeweledColor.Collection.Add(BejeweledColor.Green);
@@ -27,6 +22,8 @@ namespace DotNetBejewelledBot
             BejeweledColor.Collection.Add(BejeweledColor.Red);
             BejeweledColor.Collection.Add(BejeweledColor.White);
             BejeweledColor.Collection.Add(BejeweledColor.Yellow);
+
+            m_BWM = new BejeweledWindowManager(screenGrabTimer);
         }
 
         private void screenGrabTimer_Tick(object sender, EventArgs e)
@@ -36,12 +33,12 @@ namespace DotNetBejewelledBot
             m_BWM.GetColourGrid();
             m_BWM.CalculateMoves();
             pictureBox1.Image = m_BWM.ColourGrid;
-            if (tick * screenGrabTimer.Interval == 60000)
-            {
-                screenGrabTimer.Stop();
-                tick = 0;
-                btnStart.Enabled = true;
-            }
+            //if (tick * screenGrabTimer.Interval == 60000)
+            //{
+            //    screenGrabTimer.Stop();
+            //    tick = 0;
+            //    btnStart.Enabled = true;
+            //}
         }
 
         private void btnCalibrate_Click(object sender, EventArgs e)
@@ -49,18 +46,25 @@ namespace DotNetBejewelledBot
             m_BWM.GetScreenshot();
             if (m_BWM.Calibrate())
             {
-                MessageBox.Show("Calibrated");
+                screenGrabTimer.Start();
             }
             else
             {
                 MessageBox.Show("Couldn't calibrate");
             }
         }
-
         private void btnStart_Click(object sender, EventArgs e)
         {
-            screenGrabTimer.Start();
-            btnStart.Enabled = false;
+            m_BWM.GetScreenshot();
+            if (m_BWM.Calibrate())
+            {
+                m_BWM.isStarted = true;
+                screenGrabTimer.Start();
+            }
+            else
+            {
+                MessageBox.Show("Couldn't calibrate");
+            }
         }
     }
 }

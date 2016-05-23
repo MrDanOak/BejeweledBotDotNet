@@ -1,213 +1,65 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Collections;
-using System.Linq;
-using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.Windows.Forms;
+using System.Linq;
 
 namespace DotNetBejewelledBot
 {
     class BejeweledWindowManager
     {
-        private Rectangle m_Window;
-        private Bitmap m_ScreenShot;
-        private Bitmap m_BejeweledImage;
-        private Bitmap m_ColourGrid;
-        private Color[,] m_ColorMatrix;
+        private Rectangle gameFrame;
+        private Bitmap screenShot;
+        private Bitmap bejeweledImage;
+        private Bitmap colourGrid;
+        private Color[,] colorMatrix;
+        private List<Matcher> matchers = new List<Matcher>();
+        private bool[,] tempColorMatrix;
+        public bool isStarted = false;
+        public bool isCalibrated = false;
 
         public Bitmap ScreenShot
         {
             get
             {
-                return (Bitmap)m_BejeweledImage;
+                return (Bitmap)bejeweledImage;
             }
         }
-
         public Bitmap ColourGrid
         {
             get
             {
-                return m_ColourGrid;
+                return colourGrid;
             }
         }
-
-        public BejeweledWindowManager()
+        public BejeweledWindowManager(System.Windows.Forms.Timer frTimer)
         {
-            m_Window = new Rectangle(new Point(0, 0), new Size(320, 320));
-            m_ColorMatrix = new Color[8, 8];
+            WinAPI.Startup(frTimer);
+            MatchBuilder mb = new MatchBuilder();
+
+            matchers.AddRange(mb.GetMatchers());
+
+            screenShot = new Bitmap(Screen.PrimaryScreen.Bounds.Width,
+                           Screen.PrimaryScreen.Bounds.Height,
+                           PixelFormat.Format32bppArgb);
+            gameFrame = new Rectangle(new Point(0, 0), new Size(320, 320));
+            colorMatrix = new Color[8, 8];
             GetScreenshot();
             GetColourGrid();
         }
-
-        public void GetScreenshot()
-        {
-            m_ScreenShot = new Bitmap(Screen.PrimaryScreen.Bounds.Width,
-                                       Screen.PrimaryScreen.Bounds.Height,
-                                       PixelFormat.Format32bppArgb);
-
-            using (Graphics gfxScreenshot = Graphics.FromImage(m_ScreenShot))
-            {
-
-                gfxScreenshot.CopyFromScreen(Screen.PrimaryScreen.Bounds.X,
-                                             Screen.PrimaryScreen.Bounds.Y,
-                                             0,
-                                             0,
-                                             Screen.PrimaryScreen.Bounds.Size,
-                                             CopyPixelOperation.SourceCopy);
-            }
-
-            m_BejeweledImage = m_ScreenShot.Clone(m_Window, PixelFormat.Format32bppArgb);
-        }
-
-        public void CalculateMoves()
-        {
-            for (int x = 0; x < 8; x++)
-            {
-                for (int y = 0; y < 8; y++)
-                {
-                    if (BejeweledColor.Collection.Contains(m_ColorMatrix[x, y]))
-                    {
-                        if (((x <= 4) && (m_ColorMatrix[x, y] == m_ColorMatrix[x + 2, y]) &&
-                            (m_ColorMatrix[x, y] == m_ColorMatrix[x + 3, y])) ||
-                            ((x <= 6) && (y >= 1) && (y <= 6) && (m_ColorMatrix[x + 1, y - 1] == m_ColorMatrix[x, y]) &&
-                            (m_ColorMatrix[x + 1, y + 1] == m_ColorMatrix[x, y])) ||
-                            ((y <= 5) && (x <= 6) && (m_ColorMatrix[x + 1, y + 1] == m_ColorMatrix[x, y]) &&
-                            (m_ColorMatrix[x + 1, y + 2] == m_ColorMatrix[x, y])) ||
-                            ((y >= 2) && (x <= 6) && (m_ColorMatrix[x + 1, y - 1] == m_ColorMatrix[x, y]) &&
-                            (m_ColorMatrix[x + 1, y - 2] == m_ColorMatrix[x, y])))
-                        {
-                            // Move Gem Right
-                            WinAPI.SetCursorPos(m_Window.Left + (x * 40) + 20, m_Window.Top + (y * 40) + 20);
-                            WinAPI.DoMouseClick();
-                            Thread.Sleep(5);
-                            WinAPI.SetCursorPos(m_Window.Left + (x * 40) + 60, m_Window.Top + (y * 40) + 20);
-                            WinAPI.DoMouseClick();
-                        }
-                        else if (((x >= 3) && (m_ColorMatrix[x, y] == m_ColorMatrix[x - 2, y]) &&
-                                 (m_ColorMatrix[x, y] == m_ColorMatrix[x - 3, y])) ||
-                                 ((x >= 1) && (y >= 1) && (m_ColorMatrix[x - 1, y - 1] == m_ColorMatrix[x, y]) &&
-                                 (y <= 6) && (m_ColorMatrix[x - 1, y + 1] == m_ColorMatrix[x, y])) ||
-                                 ((x >= 1) && (y <= 5) && (m_ColorMatrix[x - 1, y + 1] == m_ColorMatrix[x, y]) &&
-                                 (m_ColorMatrix[x - 1, y + 2] == m_ColorMatrix[x, y])) ||
-                                 ((x >= 1) && (y >= 2) && (m_ColorMatrix[x - 1, y - 1] == m_ColorMatrix[x, y]) &&
-                                  (m_ColorMatrix[x - 1, y - 2] == m_ColorMatrix[x, y])))
-                        {
-                            // Move gem left
-                            WinAPI.SetCursorPos(m_Window.Left + (x * 40) + 20, m_Window.Top + (y * 40) + 20);
-                            WinAPI.DoMouseClick();
-                            Thread.Sleep(5);
-                            WinAPI.SetCursorPos(m_Window.Left + (x * 40) - 20, m_Window.Top + (y * 40) + 20);
-                            WinAPI.DoMouseClick();
-                        }
-                        else if (((y >= 3) && (m_ColorMatrix[x, y] == m_ColorMatrix[x, y - 2]) &&
-                                 (m_ColorMatrix[x, y] == m_ColorMatrix[x, y - 3])) ||
-
-                                 ((y >= 1) && (((x >= 1) && (m_ColorMatrix[x - 1, y - 1] == m_ColorMatrix[x, y]) &&
-                                  (x <= 6) && (m_ColorMatrix[x + 1, y - 1] == m_ColorMatrix[x, y])) ||
-
-                                 ((y >= 1) && (x >= 2) && (m_ColorMatrix[x - 1, y - 1] == m_ColorMatrix[x, y]) &&
-                                  (m_ColorMatrix[x - 2, y - 1] == m_ColorMatrix[x, y])) ||
-
-                                 ((y >= 1) && (x <= 5) && (m_ColorMatrix[x + 1, y - 1] == m_ColorMatrix[x, y]) &&
-                                  (m_ColorMatrix[x + 2, y - 1] == m_ColorMatrix[x, y])))))
-                        {
-                            // Move gem up
-                            WinAPI.SetCursorPos(m_Window.Left + (x * 40) + 20, m_Window.Top + (y * 40) + 20);
-                            WinAPI.DoMouseClick();
-                            Thread.Sleep(5);
-                            WinAPI.SetCursorPos(m_Window.Left + (x * 40) + 20, m_Window.Top + (y * 40) - 20);
-                            WinAPI.DoMouseClick();
-                        }
-                        else if (((y <= 6) && (x <=5) && (m_ColorMatrix[x, y] == m_ColorMatrix[x + 1, y + 1] && 
-                                 (m_ColorMatrix[x, y] == m_ColorMatrix[x + 2, y + 1]))) || 
-                                 ((x >= 2) && (y <= 6) && (m_ColorMatrix[x, y] == m_ColorMatrix[x - 1, y + 1] &&
-                                  (m_ColorMatrix[x, y] == m_ColorMatrix[x - 2, y + 1]))) ||
-                                 ((y <= 4) && (m_ColorMatrix[x, y + 2] == m_ColorMatrix[x, y]) && 
-                                   (m_ColorMatrix[x, y + 3] == m_ColorMatrix[x, y])) || 
-                                 ((x >= 1) && (x <= 6) && (y <= 6) && (m_ColorMatrix[x, y] == m_ColorMatrix[x + 1, y + 1]) &&
-                                   (m_ColorMatrix[x, y] == m_ColorMatrix[x - 1, y + 1])))
-                        {
-                            // Move gem down
-                            WinAPI.SetCursorPos(m_Window.Left + (x * 40) + 20, m_Window.Top + (y * 40) + 20);
-                            WinAPI.DoMouseClick();
-                            Thread.Sleep(5);
-                            WinAPI.SetCursorPos(m_Window.Left + (x * 40) + 20, m_Window.Top + (y * 40) + 60);
-                            WinAPI.DoMouseClick();
-                        }
-                    }
-                }
-            }
-        }
-
-        public void GetColourGrid()
-        {
-            m_ColourGrid = new Bitmap(m_Window.Width,
-                                      m_Window.Height,
-                                      PixelFormat.Format32bppArgb);
-
-            using (Graphics gfxColourgrid = Graphics.FromImage(m_ColourGrid))
-            {
-
-                for (int x = 0; x < m_BejeweledImage.Size.Width; x += 40)
-                {
-                    for (int y = 0; y < m_BejeweledImage.Size.Height; y += 40)
-                    {
-                        if (m_BejeweledImage.GetPixel(x + 20, y + 22).R > 145 && m_BejeweledImage.GetPixel(x + 20, y + 22).G > 145 && m_BejeweledImage.GetPixel(x + 20, y + 22).B > 145)
-                        {
-                            m_ColorMatrix[x / 40, y / 40] = BejeweledColor.White;
-                            gfxColourgrid.FillRectangle(new SolidBrush(BejeweledColor.White), new Rectangle(x, y, 40, 40));
-                        }
-                        else if (m_BejeweledImage.GetPixel(x + 20, y + 22).R > 100 && m_BejeweledImage.GetPixel(x + 20, y + 22).G > 100 && m_BejeweledImage.GetPixel(x + 20, y + 22).B < 100)
-                        {
-                            m_ColorMatrix[x / 40, y / 40] = BejeweledColor.Yellow;
-                            gfxColourgrid.FillRectangle(new SolidBrush(BejeweledColor.Yellow), new Rectangle(x, y, 40, 40));
-                        }
-                        else if (m_BejeweledImage.GetPixel(x + 20, y + 22).R > 90 && m_BejeweledImage.GetPixel(x + 20, y + 22).G < 30 && m_BejeweledImage.GetPixel(x + 20, y + 22).B > 90)
-                        {
-                            m_ColorMatrix[x / 40, y / 40] = BejeweledColor.Purple;
-                            gfxColourgrid.FillRectangle(new SolidBrush(BejeweledColor.Purple), new Rectangle(x, y, 40, 40));
-                        }
-                        else if (m_BejeweledImage.GetPixel(x + 20, y + 22) == Color.FromArgb(255, 106, 53, 18)) // Orange multiplier
-                        {
-                            m_ColorMatrix[x / 40, y / 40] = BejeweledColor.Orange;
-                            gfxColourgrid.FillRectangle(new SolidBrush(BejeweledColor.Orange), new Rectangle(x, y, 40, 40));
-                        }
-                        else if ((m_BejeweledImage.GetPixel(x + 20, y + 22) == Color.FromArgb(255, 18, 65, 106)) ||  // blue multiplier x2
-                                (m_BejeweledImage.GetPixel(x + 20, y + 22) == Color.FromArgb(255, 71, 122, 167))) // blue multiplier x3
-                        {
-                            m_ColorMatrix[x / 40, y / 40] = BejeweledColor.Blue;
-                            gfxColourgrid.FillRectangle(new SolidBrush(BejeweledColor.Blue), new Rectangle(x, y, 40, 40));
-                        }
-                        else if (m_BejeweledImage.GetPixel(x + 20, y + 22) == Color.FromArgb(255, 241, 27, 52)) // red bomb
-                        {
-                            m_ColorMatrix[x / 40, y / 40] = BejeweledColor.Red;
-                            gfxColourgrid.FillRectangle(new SolidBrush(BejeweledColor.Red), new Rectangle(x, y, 40, 40));
-                        }
-                        else
-                        {
-                            m_ColorMatrix[x / 40, y / 40] = m_BejeweledImage.GetPixel(x + 20, y + 22);
-                            gfxColourgrid.FillRectangle(new SolidBrush(m_BejeweledImage.GetPixel(x + 20, y + 22)), new Rectangle(x, y, 40, 40));
-                        }
-                    }
-                }
-            }
-        }
-
         public bool Calibrate()
         {
             Point Location = new Point();
 
-            for (int x = 0; x < m_ScreenShot.Size.Width; x++)
+            for (int x = 0; x < screenShot.Size.Width; x++)
             {
-                for (int y = 0; y < m_ScreenShot.Size.Height; y++)
+                for (int y = 0; y < screenShot.Size.Height; y++)
                 {
                     if (Location == Point.Empty)
                     {
-                        if (m_ScreenShot.GetPixel(x, y) == Color.FromArgb(255, 39, 19, 5))
+                        if (screenShot.GetPixel(x, y) == Color.FromArgb(255, 39, 19, 5))
                         {
                             Location = new Point(x, y);
                             break;
@@ -220,7 +72,8 @@ namespace DotNetBejewelledBot
 
             if (Location != Point.Empty)
             {
-                m_Window = new Rectangle(Location, m_Window.Size);
+                gameFrame = new Rectangle(Location, gameFrame.Size);
+                isCalibrated = true;
                 return true;
             }
             else
@@ -228,7 +81,192 @@ namespace DotNetBejewelledBot
                 return false;
             }
         }
-    }
+        public void GetScreenshot()
+        {
+            using (Graphics gfxScreenshot = Graphics.FromImage(screenShot))
+            {
+                gfxScreenshot.CopyFromScreen(Screen.PrimaryScreen.Bounds.X,
+                                             Screen.PrimaryScreen.Bounds.Y,
+                                             0,
+                                             0,
+                                             Screen.PrimaryScreen.Bounds.Size,
+                                             CopyPixelOperation.SourceCopy);
+            }
 
+            bejeweledImage = screenShot.Clone(gameFrame, PixelFormat.Format32bppArgb);
+            //m_ScreenShot.Dispose();
+        }
+        public void CalculateMoves()
+        {
+            //calibrate can start grabbing colors without making moves, helpful for debugging color recognition
+            if (isStarted)
+            {
+                List<ResultMove> res = new List<ResultMove>();
+                foreach (Color thisColor in BejeweledColor.Collection.Where(e => !e.Equals(BejeweledColor.Black)))
+                {
+                    //build a grid of a single color's gems
+                    tempColorMatrix = new bool[8, 8];
+                    for (int x = 0; x < 8; x++)
+                    {
+                        for (int y = 0; y < 8; y++)
+                        {
+                            if (thisColor == colorMatrix[x, y])
+                            {
+                                tempColorMatrix[x, y] = true;
+                            }
+                        }
+                    }
+
+                    for (int x = 0; x < 8; x++)
+                    {
+                        for (int y = 0; y < 8; y++)
+                        {
+                            int acc = 0;
+                            foreach (var matcher in matchers)
+                            {
+                                acc = 0;
+                                for (int i = 0; i < matcher.MatchMatrix.GetLength(0); i++)
+                                {
+                                    for (int j = 0; j < matcher.MatchMatrix.GetLength(1); j++)
+                                    {
+                                        if (x + i < 8 && y + j < 8 && tempColorMatrix[x + i, y + j] && matcher.MatchMatrix[i, j])
+                                        {
+                                            acc++;
+                                        }
+                                    }
+                                }
+                                if (acc == matcher.Value)
+                                {
+                                    res.Add(new ResultMove() { Move = matcher.Move, XOffset = x, YOffset = y, Value = matcher.Value, MatchMatrix = matcher.MatchMatrix });
+                                }
+                            }
+                        }
+                    }
+                }
+
+                Random rand = new Random();
+                res = res.OrderBy(o => o.Value).Reverse().ToList();
+
+                //foreach (ResultMove rq in res)
+                //{
+                //    MoveClick(rq);
+                //}
+
+                ResultMove r;
+                if (res.Count > 0)
+                {
+                    if (res[0].Value > 3)
+                    {
+                        r = res[0];
+                        res.RemoveAt(0);
+                        MoveClick(r);
+                    }
+                    //play left and right side of the board same time. Use o.YOffset for top and bottom
+                    res = res.OrderBy(o => o.XOffset).Reverse().ToList();
+                    if (res.Count > 1)
+                    {
+                        r = res[0];
+                        MoveClick(r);
+
+                        r = res[res.Count - 1];
+                        MoveClick(r);
+                    }
+                    //else just make a move
+                    else if (res.Count > 0)
+                    {
+                        r = res[0];
+                        res.RemoveAt(0);
+                        MoveClick(r);
+                    }
+                    else
+                    {
+                        //experiment to make random moves when no moves can be found
+                        //int xMove = 8;
+                        //int yMove = 8;
+                        //int xbit = 0;
+                        //int ybit = 0;
+                        //while (xMove > 7)
+                        //{
+                        //    xMove = rand.Next(8);
+                        //    xbit = rand.Next(2) == 1 ? 1 : 0;
+                        //}
+
+                        //while (yMove > 7)
+                        //{
+                        //    yMove = rand.Next(8);
+                        //    if (xbit == 0) ybit = 1;
+                        //}
+
+                        //ResultMove rr = new ResultMove();
+                        //rr.XOffset = xMove;
+                        //rr.YOffset = yMove;
+                        //rr.Move = new PieceMove() { FromX = 0, ToX = xbit, FromY = 0, ToY = ybit };
+                        //MoveClick(rr);
+                        new ManualResetEvent(false).WaitOne(50);
+                    }
+                }
+            }
+        }
+        public void MoveClick(ResultMove r)
+        {
+            WinAPI.SetCursorPos(gameFrame.Left + ((r.XOffset + r.Move.FromX) * 40) + 20, gameFrame.Top + ((r.YOffset + r.Move.FromY) * 40) + 20);
+            WinAPI.DoMouseClick();
+            new ManualResetEvent(false).WaitOne(5);
+            WinAPI.SetCursorPos(gameFrame.Left + ((r.XOffset + r.Move.ToX) * 40) + 20, gameFrame.Top + ((r.YOffset + r.Move.ToY) * 40) + 20);
+            WinAPI.DoMouseClick();
+        }
+        public void GetColourGrid()
+        {
+            colourGrid = new Bitmap(gameFrame.Width, gameFrame.Height, PixelFormat.Format32bppArgb);
+
+            using (Graphics gfxColourgrid = Graphics.FromImage(colourGrid))
+            {
+                for (int x = 0; x < bejeweledImage.Size.Width; x += 40)
+                {
+                    for (int y = 0; y < bejeweledImage.Size.Height; y += 40)
+                    {
+                        Color blockColor = GetClosestColor(BejeweledColor.Collection, bejeweledImage.GetPixel(x + 20, y + 22));
+                        Color blockColor2 = GetClosestColor(BejeweledColor.Collection, bejeweledImage.GetPixel(x + 21, y + 23));
+                        //check 2 nearby colors to see if they resolve to the same color
+                        if (blockColor.Equals(blockColor2))
+                        {
+                            colorMatrix[x / 40, y / 40] = blockColor;
+                            gfxColourgrid.FillRectangle(new SolidBrush(blockColor), new Rectangle(x, y, 40, 40));
+                        }
+                        else
+                        {
+                            //experimental, detect multiplier blocks as fallback
+                            blockColor = GetClosestColor(BejeweledColor.Collection, bejeweledImage.GetPixel(x + 18, y + 4));
+                            blockColor2 = GetClosestColor(BejeweledColor.Collection, bejeweledImage.GetPixel(x + 18, y + 5));
+                            if (blockColor.Equals(blockColor2))
+                            {
+                                colorMatrix[x / 40, y / 40] = blockColor;
+                                gfxColourgrid.FillRectangle(new SolidBrush(blockColor), new Rectangle(x, y, 40, 40));
+                            }
+                            else
+                            {
+                                colorMatrix[x / 40, y / 40] = BejeweledColor.Black;
+                                gfxColourgrid.FillRectangle(new SolidBrush(BejeweledColor.Black), new Rectangle(x, y, 40, 40));
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        private static Color GetClosestColor(List<Color> colorArray, Color baseColor)
+        {
+            var colors = colorArray.Select(x => new { Value = x, Diff = GetDiff(x, baseColor) }).ToList();
+            var min = colors.Min(x => x.Diff);
+            return colors.Find(x => x.Diff == min).Value;
+        }
+        private static int GetDiff(Color color, Color baseColor)
+        {
+            int a = color.A - baseColor.A,
+                r = color.R - baseColor.R,
+                g = color.G - baseColor.G,
+                b = color.B - baseColor.B;
+            return a * a + r * r + g * g + b * b;
+        }
+    }
     class WindowNotFoundException : Exception { }
 }

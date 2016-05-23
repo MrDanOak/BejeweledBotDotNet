@@ -66,5 +66,12 @@ namespace DotNetBejewelledBot
                 return Color.FromArgb(255, 233, 14, 233);
             }
         }
+        public static Color Black
+        {
+            get
+            {
+                return Color.FromArgb(255, 0, 0, 0);
+            }
+        }
     }
 }

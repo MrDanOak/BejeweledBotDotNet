@@ -50,6 +50,7 @@
             // 
             // screenGrabTimer
             // 
+            this.screenGrabTimer.Interval = 50;
             this.screenGrabTimer.Tick += new System.EventHandler(this.screenGrabTimer_Tick);
             // 
             // btnCalibrate
