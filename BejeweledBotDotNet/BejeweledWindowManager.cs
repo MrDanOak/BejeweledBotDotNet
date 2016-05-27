@@ -5,10 +5,11 @@ using System.Drawing;
 using System.Drawing.Imaging;
 using System.Windows.Forms;
 using System.Linq;
+using System.Timers;
 
 namespace DotNetBejewelledBot
 {
-    class BejeweledWindowManager
+    public class BejeweledWindowManager
     {
         private Rectangle gameFrame;
         private Bitmap screenShot;
@@ -16,10 +17,15 @@ namespace DotNetBejewelledBot
         private Bitmap colourGrid;
         private Color[,] colorMatrix;
         private List<Matcher> matchers = new List<Matcher>();
+        private List<string> usedIds = new List<string>();
         private bool[,] tempColorMatrix;
         public bool isStarted = false;
         public bool isCalibrated = false;
-
+        public bool isDebuggingPx = false;
+        public int debugX = 0;
+        public int debugY = 0;
+        public System.Timers.Timer calcTimer = new System.Timers.Timer();
+        public System.Windows.Forms.Timer frmTimer;
         public Bitmap ScreenShot
         {
             get
@@ -36,7 +42,8 @@ namespace DotNetBejewelledBot
         }
         public BejeweledWindowManager(System.Windows.Forms.Timer frTimer)
         {
-            WinAPI.Startup(frTimer);
+            frmTimer = frTimer;
+
             MatchBuilder mb = new MatchBuilder();
 
             matchers.AddRange(mb.GetMatchers());
@@ -48,7 +55,16 @@ namespace DotNetBejewelledBot
             colorMatrix = new Color[8, 8];
             GetScreenshot();
             GetColourGrid();
+            calcTimer.Interval = 100;
+
+            calcTimer.Elapsed += OnCalc;
+            calcTimer.Start();
         }
+        private void OnCalc(Object source, ElapsedEventArgs e)
+        {
+            CalculateMoves();
+        }
+
         public bool Calibrate()
         {
             Point Location = new Point();
@@ -94,6 +110,7 @@ namespace DotNetBejewelledBot
             }
 
             bejeweledImage = screenShot.Clone(gameFrame, PixelFormat.Format32bppArgb);
+            usedIds.Clear();
             //m_ScreenShot.Dispose();
         }
         public void CalculateMoves()
@@ -135,9 +152,28 @@ namespace DotNetBejewelledBot
                                         }
                                     }
                                 }
-                                if (acc == matcher.Value)
+
+                                if (acc == matcher.Value && !usedIds.Contains(string.Format("{0}", matcher.Id, x, y)))
                                 {
-                                    res.Add(new ResultMove() { Move = matcher.Move, XOffset = x, YOffset = y, Value = matcher.Value, MatchMatrix = matcher.MatchMatrix });
+                                    res.Add(new ResultMove() { Move = matcher.Move, XOffset = x, YOffset = y, Value = matcher.Value, MatchMatrix = matcher.MatchMatrix, Id = matcher.Id });
+                                }
+                                acc = 0;
+                                if (matcher.Reversible)
+                                {
+                                    for (int i = 0; i < matcher.MatchMatrix.GetLength(0); i++)
+                                    {
+                                        for (int j = 0; j < matcher.MatchMatrix.GetLength(1); j++)
+                                        {
+                                            if (x + i < 8 && y + j < 8 && tempColorMatrix[x + i, y + j] && !matcher.MatchMatrix[i, j])
+                                            {
+                                                acc++;
+                                            }
+                                        }
+                                    }
+                                }
+                                if (acc == matcher.Value && !usedIds.Contains(string.Format("{0}", matcher.Id, x, y)))
+                                {
+                                    res.Add(new ResultMove() { Move = matcher.Move, XOffset = x, YOffset = y, Value = matcher.Value, MatchMatrix = matcher.MatchMatrix, Priority = matcher.Priority, Id = matcher.Id *-1 });
                                 }
                             }
                         }
@@ -145,38 +181,66 @@ namespace DotNetBejewelledBot
                 }
 
                 Random rand = new Random();
-                res = res.OrderBy(o => o.Value).Reverse().ToList();
 
-                //foreach (ResultMove rq in res)
-                //{
-                //    MoveClick(rq);
-                //}
+                int counter = 0;
 
                 ResultMove r;
                 if (res.Count > 0)
                 {
+                    res = res.OrderBy(o => o.Priority).Reverse().ToList();
+                    r = res[0];
+                    //while (res[0].Value > 3)
+                    //{
+                    //    r = res[0];
+                    //    res.RemoveAt(0);
+                    //    MoveClick(r);
+                    //    new ManualResetEvent(false).WaitOne(100);
+                    //    counter++;
+                    //}
                     if (res[0].Value > 3)
                     {
                         r = res[0];
                         res.RemoveAt(0);
-                        MoveClick(r);
-                    }
-                    //play left and right side of the board same time. Use o.YOffset for top and bottom
-                    res = res.OrderBy(o => o.XOffset).Reverse().ToList();
-                    if (res.Count > 1)
-                    {
-                        r = res[0];
+
+                        usedIds.Add(string.Format("{0}", r.Id, r.XOffset, r.YOffset));
                         MoveClick(r);
 
-                        r = res[res.Count - 1];
-                        MoveClick(r);
+                    }
+                    //play left and right side of the board same time. Use o.YOffset for top and bottom
+                    //res = res.OrderBy(o => o.XOffset).Reverse().ToList();
+                    if (res.Count > 1)
+                    {
+                        //r = res[0];
+                        //res.RemoveAt(0);
+
+                        //usedIds.Add(r.Id);
+                        //MoveClick(r);
+
+
+                        while (res.Count > 0 && counter < 3)
+                        {
+                            r = res[0];
+                            res.RemoveAt(0);
+
+                            usedIds.Add(string.Format("{0}", r.Id, r.XOffset, r.YOffset));
+                            MoveClick(r);
+
+                            counter++;
+                        }
+
+
+                        //r = res[res.Count - 1];
+                        //MoveClick(r);
                     }
                     //else just make a move
                     else if (res.Count > 0)
                     {
                         r = res[0];
                         res.RemoveAt(0);
+
+                        usedIds.Add(string.Format("{0}", r.Id, r.XOffset, r.YOffset));
                         MoveClick(r);
+
                     }
                     else
                     {
@@ -202,8 +266,9 @@ namespace DotNetBejewelledBot
                         //rr.YOffset = yMove;
                         //rr.Move = new PieceMove() { FromX = 0, ToX = xbit, FromY = 0, ToY = ybit };
                         //MoveClick(rr);
-                        new ManualResetEvent(false).WaitOne(50);
+                        //new ManualResetEvent(false).WaitOne(50);
                     }
+                    //Thread.Sleep(150);
                 }
             }
         }
@@ -211,42 +276,57 @@ namespace DotNetBejewelledBot
         {
             WinAPI.SetCursorPos(gameFrame.Left + ((r.XOffset + r.Move.FromX) * 40) + 20, gameFrame.Top + ((r.YOffset + r.Move.FromY) * 40) + 20);
             WinAPI.DoMouseClick();
-            new ManualResetEvent(false).WaitOne(5);
+            Thread.Sleep(25);
             WinAPI.SetCursorPos(gameFrame.Left + ((r.XOffset + r.Move.ToX) * 40) + 20, gameFrame.Top + ((r.YOffset + r.Move.ToY) * 40) + 20);
             WinAPI.DoMouseClick();
         }
+        public void MouseMove()
+        {
+
+            WinAPI.SetCursorPos(gameFrame.Left + debugX, gameFrame.Top + debugY);
+        }
         public void GetColourGrid()
         {
+
             colourGrid = new Bitmap(gameFrame.Width, gameFrame.Height, PixelFormat.Format32bppArgb);
 
             using (Graphics gfxColourgrid = Graphics.FromImage(colourGrid))
             {
-                for (int x = 0; x < bejeweledImage.Size.Width; x += 40)
+                if (isDebuggingPx)
                 {
-                    for (int y = 0; y < bejeweledImage.Size.Height; y += 40)
+                    Color blockColor = GetClosestColor(BejeweledColor.Collection, bejeweledImage.GetPixel(debugX, debugY));
+                    gfxColourgrid.FillRectangle(new SolidBrush(blockColor), new Rectangle(0, 0, bejeweledImage.Size.Width / 2, bejeweledImage.Size.Height));
+                    gfxColourgrid.FillRectangle(new SolidBrush(bejeweledImage.GetPixel(debugX, debugY)), new Rectangle(bejeweledImage.Size.Width / 2, 0, bejeweledImage.Size.Width, bejeweledImage.Size.Height));
+
+                }
+                else {
+                    for (int x = 0; x < bejeweledImage.Size.Width; x += 40)
                     {
-                        Color blockColor = GetClosestColor(BejeweledColor.Collection, bejeweledImage.GetPixel(x + 20, y + 22));
-                        Color blockColor2 = GetClosestColor(BejeweledColor.Collection, bejeweledImage.GetPixel(x + 21, y + 23));
-                        //check 2 nearby colors to see if they resolve to the same color
-                        if (blockColor.Equals(blockColor2))
+                        for (int y = 0; y < bejeweledImage.Size.Height; y += 40)
                         {
-                            colorMatrix[x / 40, y / 40] = blockColor;
-                            gfxColourgrid.FillRectangle(new SolidBrush(blockColor), new Rectangle(x, y, 40, 40));
-                        }
-                        else
-                        {
-                            //experimental, detect multiplier blocks as fallback
-                            blockColor = GetClosestColor(BejeweledColor.Collection, bejeweledImage.GetPixel(x + 18, y + 4));
-                            blockColor2 = GetClosestColor(BejeweledColor.Collection, bejeweledImage.GetPixel(x + 18, y + 5));
-                            if (blockColor.Equals(blockColor2))
+                            Color blockColor = GetClosestColor(BejeweledColor.Collection, bejeweledImage.GetPixel(x + 20, y + 21));
+
+                            //check 2 nearby colors to see if they resolve to the same color
+                            if (!blockColor.Equals(BejeweledColor.Black) && !blockColor.Equals(BejeweledColor.White))
                             {
                                 colorMatrix[x / 40, y / 40] = blockColor;
                                 gfxColourgrid.FillRectangle(new SolidBrush(blockColor), new Rectangle(x, y, 40, 40));
                             }
                             else
                             {
-                                colorMatrix[x / 40, y / 40] = BejeweledColor.Black;
-                                gfxColourgrid.FillRectangle(new SolidBrush(BejeweledColor.Black), new Rectangle(x, y, 40, 40));
+                                //experimental, detect multiplier blocks as fallback
+                                blockColor = GetClosestColor(BejeweledColor.Collection, bejeweledImage.GetPixel(x + 20, y + 29));
+                                //blockColor2 = GetClosestColor(BejeweledColor.Collection, bejeweledImage.GetPixel(x + 18, y + 5));
+                                if (!blockColor.Equals(BejeweledColor.Black))
+                                {
+                                    colorMatrix[x / 40, y / 40] = blockColor;
+                                    gfxColourgrid.FillRectangle(new SolidBrush(blockColor), new Rectangle(x, y, 40, 40));
+                                }
+                                else
+                                {
+                                    colorMatrix[x / 40, y / 40] = BejeweledColor.Black;
+                                    gfxColourgrid.FillRectangle(new SolidBrush(BejeweledColor.Black), new Rectangle(x, y, 40, 40));
+                                }
                             }
                         }
                     }

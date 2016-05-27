@@ -6,7 +6,7 @@ namespace DotNetBejewelledBot
 {
     public class WinAPI
     {
-        static System.Windows.Forms.Timer frMTimer;
+        static BejeweledWindowManager _bwm;
         private const int WH_KEYBOARD_LL = 13;
         private const int WM_KEYDOWN = 0x0100;
         private static LowLevelKeyboardProc _proc = HookCallback;
@@ -32,9 +32,9 @@ namespace DotNetBejewelledBot
         public static extern void mouse_event(uint dwFlags, uint dx, uint dy, uint cButtons, uint dwExtraInfo);
 
         private delegate IntPtr LowLevelKeyboardProc(int nCode, IntPtr wParam, IntPtr lParam);
-        public static void Startup(System.Windows.Forms.Timer frTimer)
+        public static void Startup(BejeweledWindowManager bwm)
         {
-            frMTimer = frTimer;
+            _bwm = bwm;
             _hookID = SetHook(_proc);
         }
         private static IntPtr SetHook(LowLevelKeyboardProc proc)
@@ -53,11 +53,13 @@ namespace DotNetBejewelledBot
                 int vkCode = Marshal.ReadInt32(lParam);
                 if (((Keys)vkCode).ToString() == "Q")
                 {
-                    frMTimer.Start();
+                    _bwm.frmTimer.Start();
+                    _bwm.calcTimer.Start();
                 }
                 else
                 {
-                    frMTimer.Stop();
+                    _bwm.frmTimer.Stop();
+                    _bwm.calcTimer.Stop();
                 }
             }
             return CallNextHookEx(_hookID, nCode, wParam, lParam);

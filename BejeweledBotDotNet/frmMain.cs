@@ -7,7 +7,7 @@ namespace DotNetBejewelledBot
 {
     public partial class frmMain : Form
     {
-        private BejeweledWindowManager m_BWM;
+        public BejeweledWindowManager m_BWM;
         private int tick = 0;
 
         public frmMain()
@@ -24,6 +24,7 @@ namespace DotNetBejewelledBot
             BejeweledColor.Collection.Add(BejeweledColor.Yellow);
 
             m_BWM = new BejeweledWindowManager(screenGrabTimer);
+            WinAPI.Startup(m_BWM);
         }
 
         private void screenGrabTimer_Tick(object sender, EventArgs e)
@@ -31,7 +32,7 @@ namespace DotNetBejewelledBot
             tick++;
             m_BWM.GetScreenshot();
             m_BWM.GetColourGrid();
-            m_BWM.CalculateMoves();
+            //m_BWM.CalculateMoves();
             pictureBox1.Image = m_BWM.ColourGrid;
             //if (tick * screenGrabTimer.Interval == 60000)
             //{
@@ -64,6 +65,31 @@ namespace DotNetBejewelledBot
             else
             {
                 MessageBox.Show("Couldn't calibrate");
+            }
+        }
+
+        private void debugButton_Click(object sender, EventArgs e)
+        {
+            m_BWM.isDebuggingPx = !m_BWM.isDebuggingPx;
+        }
+
+        private void textBox2_TextChanged(object sender, EventArgs e)
+        {
+            if (int.TryParse(textBox2.Text, out m_BWM.debugX))
+            {
+                m_BWM.GetScreenshot();
+                m_BWM.GetColourGrid();
+                m_BWM.MouseMove();
+            }
+        }
+
+        private void textBox1_TextChanged(object sender, EventArgs e)
+        {
+            if (int.TryParse(textBox1.Text, out m_BWM.debugY))
+            {
+                m_BWM.GetScreenshot();
+                m_BWM.GetColourGrid();
+                m_BWM.MouseMove();
             }
         }
     }

@@ -13,5 +13,7 @@ namespace DotNetBejewelledBot
         public int XOffset { get; set; }
         public int YOffset { get; set; }
         public bool[,] MatchMatrix { get; set; }
+        public int Priority { get; set; }
+        public int Id { get; set; }
     }
 }
