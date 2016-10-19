@@ -38,5 +38,18 @@ namespace DotNetBejewelledBot
             uint Y = (uint)Cursor.Position.Y;
             mouse_event(MOUSEEVENTF_LEFTDOWN | MOUSEEVENTF_LEFTUP, X, Y, 0, 0);
         }
+
+        [DllImport("user32.dll")]
+        public static extern bool GetCursorPos(out POINT lpPoint);
+
+        public static POINT GetCursorPosition()
+        {
+            POINT lpPoint;
+            GetCursorPos(out lpPoint);
+            //bool success = User32.GetCursorPos(out lpPoint);
+            // if (!success)
+
+            return lpPoint;
+        }
     }
 }

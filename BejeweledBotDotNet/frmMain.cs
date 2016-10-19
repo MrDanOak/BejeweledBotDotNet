@@ -13,7 +13,6 @@ namespace DotNetBejewelledBot
     public partial class frmMain : Form
     {
         private BejeweledWindowManager m_BWM;
-        private int tick = 0;
 
         public frmMain()
         {
@@ -27,19 +26,20 @@ namespace DotNetBejewelledBot
             BejeweledColor.Collection.Add(BejeweledColor.Red);
             BejeweledColor.Collection.Add(BejeweledColor.White);
             BejeweledColor.Collection.Add(BejeweledColor.Yellow);
+            TopMost = true;
         }
 
         private void screenGrabTimer_Tick(object sender, EventArgs e)
         {
-            tick++;
             m_BWM.GetScreenshot();
             m_BWM.GetColourGrid();
             m_BWM.CalculateMoves();
             pictureBox1.Image = m_BWM.ColourGrid;
-            if (tick * screenGrabTimer.Interval == 60000)
+
+            if (((m_BWM.PlayingWindow.Left - WinAPI.GetCursorPosition().x) % 20 != 0 ||
+                (m_BWM.PlayingWindow.Top - WinAPI.GetCursorPosition().y) % 20 != 0))
             {
                 screenGrabTimer.Stop();
-                tick = 0;
                 btnStart.Enabled = true;
             }
         }
@@ -59,6 +59,7 @@ namespace DotNetBejewelledBot
 
         private void btnStart_Click(object sender, EventArgs e)
         {
+            System.Threading.Thread.Sleep(10);
             screenGrabTimer.Start();
             btnStart.Enabled = false;
         }

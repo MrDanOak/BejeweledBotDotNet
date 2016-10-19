@@ -35,11 +35,19 @@ namespace DotNetBejewelledBot
             }
         }
 
+        public Rectangle PlayingWindow
+        {
+            get
+            {
+                return m_Window;
+            }
+        }
+
         public BejeweledWindowManager()
         {
             m_Window = new Rectangle(new Point(0, 0), new Size(320, 320));
             m_ColorMatrix = new Color[8, 8];
-            GetScreenshot();
+            GetScreenshot();   
             GetColourGrid();
         }
 
@@ -69,6 +77,7 @@ namespace DotNetBejewelledBot
             {
                 for (int y = 0; y < 8; y++)
                 {
+                    Thread.Sleep(1);
                     if (BejeweledColor.Collection.Contains(m_ColorMatrix[x, y]))
                     {
                         if (((x <= 4) && (m_ColorMatrix[x, y] == m_ColorMatrix[x + 2, y]) &&
@@ -156,41 +165,41 @@ namespace DotNetBejewelledBot
                 {
                     for (int y = 0; y < m_BejeweledImage.Size.Height; y += 40)
                     {
-                        if (m_BejeweledImage.GetPixel(x + 20, y + 22).R > 145 && m_BejeweledImage.GetPixel(x + 20, y + 22).G > 145 && m_BejeweledImage.GetPixel(x + 20, y + 22).B > 145)
+                        Color pixel = m_BejeweledImage.GetPixel(x + 20, y + 22);
+                        if (pixel.R > 145 && pixel.G > 145 && pixel.B > 145)
                         {
                             m_ColorMatrix[x / 40, y / 40] = BejeweledColor.White;
                             gfxColourgrid.FillRectangle(new SolidBrush(BejeweledColor.White), new Rectangle(x, y, 40, 40));
                         }
-                        else if (m_BejeweledImage.GetPixel(x + 20, y + 22).R > 100 && m_BejeweledImage.GetPixel(x + 20, y + 22).G > 100 && m_BejeweledImage.GetPixel(x + 20, y + 22).B < 100)
+                        else if (pixel.R > 100 && pixel.G > 100 && pixel.B < 100)
                         {
                             m_ColorMatrix[x / 40, y / 40] = BejeweledColor.Yellow;
                             gfxColourgrid.FillRectangle(new SolidBrush(BejeweledColor.Yellow), new Rectangle(x, y, 40, 40));
                         }
-                        else if (m_BejeweledImage.GetPixel(x + 20, y + 22).R > 90 && m_BejeweledImage.GetPixel(x + 20, y + 22).G < 30 && m_BejeweledImage.GetPixel(x + 20, y + 22).B > 90)
+                        else if (pixel.R > 90 && pixel.G < 60 && pixel.B > 90)
                         {
                             m_ColorMatrix[x / 40, y / 40] = BejeweledColor.Purple;
                             gfxColourgrid.FillRectangle(new SolidBrush(BejeweledColor.Purple), new Rectangle(x, y, 40, 40));
                         }
-                        else if (m_BejeweledImage.GetPixel(x + 20, y + 22) == Color.FromArgb(255, 106, 53, 18)) // Orange multiplier
+                        else if (pixel.R > 100 && pixel.G > 50 && pixel.G < 170 && pixel.B < 110)
                         {
                             m_ColorMatrix[x / 40, y / 40] = BejeweledColor.Orange;
                             gfxColourgrid.FillRectangle(new SolidBrush(BejeweledColor.Orange), new Rectangle(x, y, 40, 40));
                         }
-                        else if ((m_BejeweledImage.GetPixel(x + 20, y + 22) == Color.FromArgb(255, 18, 65, 106)) ||  // blue multiplier x2
-                                (m_BejeweledImage.GetPixel(x + 20, y + 22) == Color.FromArgb(255, 71, 122, 167))) // blue multiplier x3
+                        else if (pixel.R < 80 && pixel.R > 15 && pixel.G < 150 && pixel.G > 60 && pixel.B > 100)
                         {
                             m_ColorMatrix[x / 40, y / 40] = BejeweledColor.Blue;
                             gfxColourgrid.FillRectangle(new SolidBrush(BejeweledColor.Blue), new Rectangle(x, y, 40, 40));
                         }
-                        else if (m_BejeweledImage.GetPixel(x + 20, y + 22) == Color.FromArgb(255, 241, 27, 52)) // red bomb
+                        else if (pixel.R > 200 && pixel.G < 60 && pixel.B < 60)
                         {
                             m_ColorMatrix[x / 40, y / 40] = BejeweledColor.Red;
                             gfxColourgrid.FillRectangle(new SolidBrush(BejeweledColor.Red), new Rectangle(x, y, 40, 40));
                         }
                         else
                         {
-                            m_ColorMatrix[x / 40, y / 40] = m_BejeweledImage.GetPixel(x + 20, y + 22);
-                            gfxColourgrid.FillRectangle(new SolidBrush(m_BejeweledImage.GetPixel(x + 20, y + 22)), new Rectangle(x, y, 40, 40));
+                            m_ColorMatrix[x / 40, y / 40] = pixel;
+                            gfxColourgrid.FillRectangle(new SolidBrush(pixel), new Rectangle(x, y, 40, 40));
                         }
                     }
                 }
@@ -229,6 +238,4 @@ namespace DotNetBejewelledBot
             }
         }
     }
-
-    class WindowNotFoundException : Exception { }
 }
